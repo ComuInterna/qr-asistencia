@@ -90,7 +90,7 @@ const AttendanceApp = () => {
                 padding: 12,
                 marginBottom: 12,
                 color: "#2E7D32",
-                backgroundColor: "#69d766",
+                backgroundColor: "#E8F5E9",
               }}
             >
               <p>✅ <strong>Registro exitoso</strong></p>
