@@ -78,7 +78,7 @@ const AttendanceApp = () => {
 
       <div id="qr-reader" style={{ marginTop: 20, marginBottom: 20 }} />
 
-      <div style={{ border: "1px solid #4CAF50", borderRadius: 8, backgroundColor: "#69d766", padding: 16 }}>
+      <div style={{ border: "1px solid #4CAF50", borderRadius: 8, backgroundColor: "#E8F5E9", padding: 16 }}>
         <h2 style={{ fontSize: 20, fontWeight: "600", marginBottom: 12 }}>Registros</h2>
         <ul style={{ listStyle: "none", paddingLeft: 0 }}>
           {scannedData.map((data, index) => (
