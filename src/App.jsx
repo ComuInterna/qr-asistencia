@@ -68,7 +68,7 @@ const AttendanceApp = () => {
 
   return (
     <div style={{ padding: 24, maxWidth: 600, margin: "auto", fontFamily: "Arial, sans-serif" }}>
-      <h1 style={{ fontSize: 24, fontWeight: "bold", marginBottom: 16 }}>Registro de Asistencia por QR</h1>
+      <h1 style={{ fontSize: 24, fontWeight: "bold", marginBottom: 16 }}>Registro de Asistencia Riverline Ergonomic</h1>
       <button onClick={startScanner} disabled={isScanning} style={{ marginRight: 12, padding: "8px 16px" }}>
         {isScanning ? "Escaneando..." : "Iniciar Escáner"}
       </button>
@@ -78,7 +78,7 @@ const AttendanceApp = () => {
 
       <div id="qr-reader" style={{ marginTop: 20, marginBottom: 20 }} />
 
-      <div style={{ border: "1px solid #4CAF50", borderRadius: 8, backgroundColor: "#E8F5E9", padding: 16 }}>
+      <div style={{ border: "1px solid #4CAF50", borderRadius: 8, backgroundColor: "#69d766", padding: 16 }}>
         <h2 style={{ fontSize: 20, fontWeight: "600", marginBottom: 12 }}>Registros</h2>
         <ul style={{ listStyle: "none", paddingLeft: 0 }}>
           {scannedData.map((data, index) => (
