@@ -83,7 +83,7 @@ const AttendanceApp = () => {
   const exportToExcel = () => {
     const formattedData = scannedData.map((item) => ({
       "Nombre completo": item.nombre,
-      "Puesto": item.puesto,
+      "Cargo": item.cargo,
       "Área": item.unidad,
       "Unidad de negocio": item.udn,
       "Número de empleado": item.numeroEmpleado,
