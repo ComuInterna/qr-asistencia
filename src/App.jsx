@@ -184,7 +184,7 @@ const AttendanceApp = () => {
             >
               <p>✅ <strong>Registro exitoso</strong></p>
               <p><strong>Nombre:</strong> {data.nombre}</p>
-              <p><strong>Puesto:</strong> {data.puesto}</p>
+              <p><strong>Cargo:</strong> {data.cargo}</p>
               <p><strong>Área:</strong> {data.unidad}</p>
               <p><strong>Unidad de negocio:</strong> {data.udn}</p>
               <p><strong>Número de empleado:</strong> {data.numeroEmpleado}</p>
