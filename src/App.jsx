@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import React, { useState, useEffect, useRef } from "react";
+import { Html5Qrcode } from "html5-qrcode";
 import * as XLSX from "xlsx";
 import { db } from "./firebase";
 import {
@@ -13,9 +13,12 @@ import {
 } from "firebase/firestore";
 
 const AttendanceApp = () => {
-  const [scanner, setScanner] = useState(null);
+  const scannerRef = useRef(null);
   const [scannedData, setScannedData] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [minZoom, setMinZoom] = useState(1);
+  const [maxZoom, setMaxZoom] = useState(1);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,55 +33,94 @@ const AttendanceApp = () => {
     fetchData();
   }, []);
 
-  const startScanner = () => {
-    if (scanner) return;
+  const startScanner = async () => {
+    if (scannerRef.current) return;
 
-    const qrScanner = new Html5QrcodeScanner("qr-reader", {
-      fps: 10,
-      qrbox: 250,
-    });
+    const qrScanner = new Html5Qrcode("qr-reader");
+    try {
+      await qrScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        async (decodedText) => {
+          await qrScanner.stop();
+          await qrScanner.clear();
+          scannerRef.current = null;
+          setIsScanning(false);
+          setZoom(minZoom);
 
-    qrScanner.render(
-      async (decodedText) => {
-        qrScanner.clear();
-        setScanner(null);
-        setIsScanning(false);
+          try {
+            const data = JSON.parse(decodedText);
+            const now = new Date();
 
-        try {
-          const data = JSON.parse(decodedText);
-          const now = new Date();
+            const q = query(
+              collection(db, "asistencias"),
+              where("numeroEmpleado", "==", data.numeroEmpleado)
+            );
+            const querySnapshot = await getDocs(q);
 
-          const q = query(
-            collection(db, "asistencias"),
-            where("numeroEmpleado", "==", data.numeroEmpleado)
-          );
-          const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+              alert("⚠️ Este número de empleado ya ha sido registrado.");
+              return;
+            }
 
-          if (!querySnapshot.empty) {
-            alert("⚠️ Este número de empleado ya ha sido registrado.");
-            return;
+            const record = {
+              ...data,
+              timestamp: now.toLocaleString(),
+            };
+
+            await addDoc(collection(db, "asistencias"), record);
+            setScannedData((prev) => [...prev, record]);
+          } catch (error) {
+            console.error("Error durante escaneo o guardado:", error);
+            alert("Ocurrió un problema al procesar el QR.");
           }
-
-          const record = {
-            ...data,
-            timestamp: now.toLocaleString(),
-          };
-
-          await addDoc(collection(db, "asistencias"), record);
-          setScannedData((prev) => [...prev, record]);
-        } catch (error) {
-          console.error("Error durante escaneo o guardado:", error);
-          alert("Ocurrió un problema al procesar el QR.");
+        },
+        (errorMessage) => {
+          console.warn("Error de escaneo:", errorMessage);
         }
-      },
-      (errorMessage) => {
-        console.warn("Error de escaneo:", errorMessage);
-      }
-    );
+      );
 
-    setScanner(qrScanner);
-    setIsScanning(true);
+      scannerRef.current = qrScanner;
+      setIsScanning(true);
+
+      const capabilities = qrScanner.getRunningTrackCapabilities();
+      if (capabilities && capabilities.zoom) {
+        setMinZoom(capabilities.zoom.min ?? 1);
+        setMaxZoom(capabilities.zoom.max ?? 1);
+        setZoom(capabilities.zoom.min ?? 1);
+      }
+    } catch (error) {
+      console.error("Error al iniciar el escáner:", error);
+    }
   };
+
+  const handleZoomChange = async (e) => {
+    const value = Number(e.target.value);
+    setZoom(value);
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.applyVideoConstraints({
+          advanced: [{ zoom: value }],
+        });
+      } catch (err) {
+        console.warn("No se pudo aplicar el zoom:", err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current
+          .stop()
+          .then(() => scannerRef.current?.clear())
+          .catch(() => {})
+          .finally(() => {
+            scannerRef.current = null;
+          });
+      }
+    };
+  }, []);
 
   const exportToExcel = () => {
     const formattedData = scannedData.map((item) => ({
@@ -155,6 +197,20 @@ const AttendanceApp = () => {
       >
         Limpiar registros
       </button>
+
+      {isScanning && maxZoom > minZoom && (
+        <div style={{ marginTop: 12 }}>
+          <input
+            type="range"
+            min={minZoom}
+            max={maxZoom}
+            step={0.1}
+            value={zoom}
+            onChange={handleZoomChange}
+            style={{ width: "100%" }}
+          />
+        </div>
+      )}
 
       <div id="qr-reader" style={{ marginTop: 20, marginBottom: 20 }} />
 
