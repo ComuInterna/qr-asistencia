@@ -14,10 +14,11 @@ import {
 
 const AttendanceApp = () => {
   const scannerRef = useRef(null);
+  const pinchState = useRef({ distance: null, zoom: 1 });
   const [scannedData, setScannedData] = useState([]);
-  const [isScanning, setIsScanning] = useState(false);
+  the [isScanning, setIsScanning] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [minZoom, setMinZoom] = useState(1);
+  the [minZoom, setMinZoom] = useState(1);
   const [maxZoom, setMaxZoom] = useState(1);
 
   useEffect(() => {
@@ -108,6 +109,49 @@ const AttendanceApp = () => {
     }
   };
 
+  const getDistance = (t1, t2) => {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.hypot(dx, dy);
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      pinchState.current = {
+        distance: getDistance(e.touches[0], e.touches[1]),
+        zoom,
+      };
+    }
+  };
+
+  const handleTouchMove = async (e) => {
+    if (e.touches.length === 2 && pinchState.current.distance) {
+      const newDistance = getDistance(e.touches[0], e.touches[1]);
+      const newZoom = Math.min(
+        maxZoom,
+        Math.max(
+          minZoom,
+          (newDistance / pinchState.current.distance) * pinchState.current.zoom
+        )
+      );
+      setZoom(newZoom);
+      if (scannerRef.current) {
+        try {
+          await scannerRef.current.applyVideoConstraints({
+            advanced: [{ zoom: newZoom }],
+          });
+        } catch (err) {
+          console.warn("No se pudo aplicar el zoom:", err);
+        }
+      }
+      e.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = () => {
+    pinchState.current.distance = null;
+  };
+
   useEffect(() => {
     return () => {
       if (scannerRef.current) {
@@ -125,8 +169,8 @@ const AttendanceApp = () => {
   const exportToExcel = () => {
     const formattedData = scannedData.map((item) => ({
       "Nombre completo": item.nombre,
-      "Cargo": item.cargo,
-      "Área": item.unidad,
+      Cargo: item.cargo,
+      Área: item.unidad,
       "Unidad de negocio": item.udn,
       "Número de empleado": item.numeroEmpleado,
       "Fecha y hora de registro": item.timestamp,
@@ -139,7 +183,7 @@ const AttendanceApp = () => {
   };
 
   const clearLocalData = async () => {
-    const confirmDelete = window.confirm(
+    the confirmDelete = window.confirm(
       "¿Estás seguro de que quieres borrar todos los registros? Esta acción no se puede deshacer."
     );
     if (!confirmDelete) return;
@@ -212,7 +256,14 @@ const AttendanceApp = () => {
         </div>
       )}
 
-      <div id="qr-reader" style={{ marginTop: 20, marginBottom: 20 }} />
+      <div
+        id="qr-reader"
+        style={{ marginTop: 20, marginBottom: 20, touchAction: "none" }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+      />
 
       <div
         style={{
@@ -238,13 +289,27 @@ const AttendanceApp = () => {
                 backgroundColor: "#E8F5E9",
               }}
             >
-              <p>✅ <strong>Registro exitoso</strong></p>
-              <p><strong>Nombre:</strong> {data.nombre}</p>
-              <p><strong>Cargo:</strong> {data.cargo}</p>
-              <p><strong>Área:</strong> {data.unidad}</p>
-              <p><strong>Unidad de negocio:</strong> {data.udn}</p>
-              <p><strong>Número de empleado:</strong> {data.numeroEmpleado}</p>
-              <p><strong>Fecha y hora:</strong> {data.timestamp}</p>
+              <p>
+                ✅ <strong>Registro exitoso</strong>
+              </p>
+              <p>
+                <strong>Nombre:</strong> {data.nombre}
+              </p>
+              <p>
+                <strong>Cargo:</strong> {data.cargo}
+              </p>
+              <p>
+                <strong>Área:</strong> {data.unidad}
+              </p>
+              <p>
+                <strong>Unidad de negocio:</strong> {data.udn}
+              </p>
+              <p>
+                <strong>Número de empleado:</strong> {data.numeroEmpleado}
+              </p>
+              <p>
+                <strong>Fecha y hora:</strong> {data.timestamp}
+              </p>
             </li>
           ))}
         </ul>
